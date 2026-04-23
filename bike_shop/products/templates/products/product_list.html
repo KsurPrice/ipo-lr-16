@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список товаров - Велоаксессуары</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .stats {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .filters {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .filters form {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        select, button {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background: #5a67d8;
+        }
+        .reset-btn {
+            background: #6c757d;
+        }
+        .reset-btn:hover {
+            background: #5a6268;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .product-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+            text-align: center;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .product-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+        .product-name {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .product-price {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .product-stock {
+            color: #28a745;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .product-stock.low {
+            color: #dc3545;
+        }
+        .product-category {
+            background: #e9ecef;
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #667eea;
+            text-decoration: none;
+            text-align: center;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .no-products {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.2em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            .filters form {
+                flex-direction: column;
+            }
+            select, button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚲 Наши велоаксессуары</h1>
+        <div class="stats">Всего товаров: {{ total_count }}</div>
+        
+        <div class="filters">
+            <form method="get">
+                <select name="category">
+                    <option value="">Все категории</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <select name="manufacturer">
+                    <option value="">Все производители</option>
+                    {% for man in manufacturers %}
+                    <option value="{{ man.id }}" {% if request.GET.manufacturer == man.id|stringformat:"s" %}selected{% endif %}>
+                        {{ man.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <select name="sort">
+                    <option value="">Без сортировки</option>
+                    <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Цена (по возрастанию)</option>
+                    <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Цена (по убыванию)</option>
+                    <option value="name_asc" {% if request.GET.sort == 'name_asc' %}selected{% endif %}>Название (А-Я)</option>
+                </select>
+                
+                <button type="submit">Применить фильтры</button>
+                <a href="{% url 'products:product_list' %}">
+                    <button type="button" class="reset-btn">Сбросить</button>
+                </a>
+            </form>
+        </div>
+        
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <div class="product-icon">
+                    {% if product.category.name == 'Bicycles' %}🚲
+                    {% elif product.category.name == 'Helmets' %}🪖
+                    {% elif product.category.name == 'Lights' %}🔦
+                    {% elif product.category.name == 'Locks' %}🔒
+                    {% elif product.category.name == 'Bags' %}🎒
+                    {% else %}🔧
+                    {% endif %}
+                </div>
+                <div class="product-name">{{ product.name }}</div>
+                <div class="product-price">{{ product.price }} руб.</div>
+                <div class="product-stock {% if product.stock_quantity < 20 %}low{% endif %}">
+                    📦 В наличии: {{ product.stock_quantity }} шт.
+                </div>
+                <div class="product-category">{{ product.category.name }}</div>
+                <a href="{% url 'products:product_detail' product.id %}" class="btn">Подробнее</a>
+            </div>
+            {% empty %}
+            <div class="no-products">
+                😕 Товары не найдены<br>
+                Попробуйте изменить параметры фильтрации
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="/" class="back-link">← Вернуться на главную</a>
+        </div>
+    </div>
+</body>
+</html>
