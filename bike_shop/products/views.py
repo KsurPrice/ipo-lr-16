@@ -4,6 +4,140 @@ from django.db.models import Q
 from django.contrib import messages
 from .models import Product, Category, Manufacturer
 from cart.models import Cart, CartItem
+from rest_framework import viewsets, permissions, filters, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import Product, Category, Manufacturer
+from cart.models import Cart, CartItem
+from .serializers import (
+    ProductSerializer, CategorySerializer, ManufacturerSerializer,
+    CartSerializer, CartItemSerializer
+)
+
+# ========== API КАТЕГОРИЙ ==========
+class CategoryViewSet(viewsets.ModelViewSet):
+    """API для управления категориями"""
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['name', 'description']
+    
+    @action(detail=True, methods=['get'])
+    def products(self, request, pk=None):
+        """Получить все товары в категории"""
+        category = self.get_object()
+        products = category.products.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+# ========== API ПРОИЗВОДИТЕЛЕЙ ==========
+class ManufacturerViewSet(viewsets.ModelViewSet):
+    """API для управления производителями"""
+    queryset = Manufacturer.objects.all()
+    serializer_class = ManufacturerSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['name', 'country']
+    
+    @action(detail=True, methods=['get'])
+    def products(self, request, pk=None):
+        """Получить все товары производителя"""
+        manufacturer = self.get_object()
+        products = manufacturer.products.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+# ========== API ТОВАРОВ ==========
+class ProductViewSet(viewsets.ModelViewSet):
+    """API для управления товарами"""
+    queryset = Product.objects.all().select_related('category', 'manufacturer')
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category', 'manufacturer']
+    search_fields = ['name', 'description']
+    ordering_fields = ['price', 'stock_quantity', 'name']
+    ordering = ['name']
+
+# ========== API КОРЗИНЫ ==========
+class CartViewSet(viewsets.ModelViewSet):
+    """API для управления корзиной"""
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Возвращает только корзину текущего пользователя"""
+        return Cart.objects.filter(user=self.request.user)
+    
+    def get_object(self):
+        """Получает или создает корзину для пользователя"""
+        cart, created = Cart.objects.get_or_create(user=self.request.user)
+        return cart
+    
+    @action(detail=False, methods=['post'])
+    def add_item(self, request):
+        """Добавить товар в корзину"""
+        cart = self.get_object()
+        product_id = request.data.get('product_id')
+        quantity = int(request.data.get('quantity', 1))
+        
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({'error': 'Товар не найден'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if quantity > product.stock_quantity:
+            return Response({'error': f'Недостаточно товара. Доступно: {product.stock_quantity}'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantity': quantity}
+        )
+        
+        if not created:
+            cart_item.quantity += quantity
+            if cart_item.quantity > product.stock_quantity:
+                return Response({'error': f'Превышен лимит. Доступно: {product.stock_quantity}'},
+                              status=status.HTTP_400_BAD_REQUEST)
+            cart_item.save()
+        
+        serializer = CartItemSerializer(cart_item)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['delete'])
+    def clear(self, request):
+        """Очистить корзину"""
+        cart = self.get_object()
+        cart.items.all().delete()
+        return Response({'message': 'Корзина очищена'}, status=status.HTTP_204_NO_CONTENT)
+
+# ========== API ЭЛЕМЕНТОВ КОРЗИНЫ ==========
+class CartItemViewSet(viewsets.ModelViewSet):
+    """API для управления элементами корзины"""
+    serializer_class = CartItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Возвращает только элементы корзины текущего пользователя"""
+        return CartItem.objects.filter(cart__user=self.request.user)
+    
+    def update(self, request, *args, **kwargs):
+        """Обновление количества товара с валидацией"""
+        instance = self.get_object()
+        new_quantity = request.data.get('quantity', instance.quantity)
+        
+        if new_quantity > instance.product.stock_quantity:
+            return Response({'error': f'Недостаточно товара. Доступно: {instance.product.stock_quantity}'},
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        instance.quantity = new_quantity
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 def product_list(request):
     """Список товаров с фильтрацией и поиском"""

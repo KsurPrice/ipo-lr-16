@@ -7,6 +7,22 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side
 from .models import Order, OrderItem
 from cart.models import Cart
+from rest_framework import viewsets, permissions
+from .models import Order, OrderItem
+from products.serializers import OrderSerializer
+
+class OrderViewSet(viewsets.ModelViewSet):
+    """API для управления заказами"""
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Возвращает только заказы текущего пользователя"""
+        return Order.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        """При создании заказа автоматически подставляется пользователь"""
+        serializer.save(user=self.request.user)
 
 @login_required
 def checkout(request):
