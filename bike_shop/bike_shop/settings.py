@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'shop',
     'products',
     'cart',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -125,3 +126,10 @@ TEMPLATES[0]['DIRS'] = [BASE_DIR / 'templates']
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/catalog/'
 LOGOUT_REDIRECT_URL = '/'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ilyakaras.off@gmail.com'
+EMAIL_HOST_PASSWORD = 'wmjflupktwcforsy'
+DEFAULT_FROM_EMAIL = 'ilyakaras.off@gmail.com'

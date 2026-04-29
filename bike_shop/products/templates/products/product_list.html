@@ -123,17 +123,28 @@
         }
         .btn {
             display: inline-block;
-            padding: 10px 20px;
+            padding: 8px 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-decoration: none;
             border-radius: 25px;
             transition: all 0.3s;
             font-size: 0.9em;
+            margin: 5px;
         }
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-cart {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        .user-info {
+            text-align: right;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
         .back-link {
             display: inline-block;
@@ -169,6 +180,16 @@
 </head>
 <body>
     <div class="container">
+        <div class="user-info">
+            {% if user.is_authenticated %}
+                👤 {{ user.username }} | 
+                <a href="{% url 'products:cart_view' %}">🛒 Корзина</a> |
+                <a href="{% url 'logout' %}">🚪 Выйти</a>
+            {% else %}
+                <a href="{% url 'login' %}">🔐 Войти</a>
+            {% endif %}
+        </div>
+        
         <h1>🚲 Наши велоаксессуары</h1>
         <div class="stats">Всего товаров: {{ total_count }}</div>
         
@@ -224,7 +245,16 @@
                     📦 В наличии: {{ product.stock_quantity }} шт.
                 </div>
                 <div class="product-category">{{ product.category.name }}</div>
-                <a href="{% url 'products:product_detail' product.id %}" class="btn">Подробнее</a>
+                <div>
+                    <a href="{% url 'products:product_detail' product.id %}" class="btn">Подробнее</a>
+                    {% if user.is_authenticated and product.stock_quantity > 0 %}
+                    <a href="{% url 'products:add_to_cart' product.id %}" class="btn btn-cart">🛒 В корзину</a>
+                    {% elif not user.is_authenticated %}
+                    <a href="{% url 'login' %}" class="btn btn-cart">🔐 Войдите, чтобы купить</a>
+                    {% elif product.stock_quantity == 0 %}
+                    <button class="btn btn-cart" style="background: #6c757d; cursor: not-allowed;" disabled>📦 Нет в наличии</button>
+                    {% endif %}
+                </div>
             </div>
             {% empty %}
             <div class="no-products">
