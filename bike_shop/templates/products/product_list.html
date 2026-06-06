@@ -68,22 +68,23 @@
                     <div class="card product-card h-100">
                         <div class="position-relative">
                             <div class="card-img-top text-center pt-3">
-                                {% if 'Bicycles' in product.category.name or 'велосипед' in product.name.lower %}
+                                <!-- ВЫБОР КАРТИНКИ ПО КАТЕГОРИИ -->
+                                {% if 'Bicycles' in product.category.name %}
                                     <img src="{% static 'images/bike.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Велосипед">
-                                {% elif 'Lights' in product.category.name or 'фонар' in product.name.lower %}
+                                {% elif 'Lights' in product.category.name %}
                                     <img src="{% static 'images/fonarik.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Фонарь">
-                                {% elif 'Locks' in product.category.name or 'замок' in product.name.lower %}
+                                {% elif 'Locks' in product.category.name %}
                                     <img src="{% static 'images/zamok.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Замок">
-                                {% elif 'Bags' in product.category.name or 'сумк' in product.name.lower %}
+                                {% elif 'Bags' in product.category.name %}
                                     <img src="{% static 'images/sumka.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Сумка">
-                                {% elif 'Helmets' in product.category.name or 'шлем' in product.name.lower %}
+                                {% elif 'Helmets' in product.category.name %}
                                     <img src="{% static 'images/schlem.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Шлем">
                                 {% else %}
                                     <img src="{% static 'images/bike.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Аксессуар">
                                 {% endif %}
                             </div>
                             <div class="stock-badge {% if product.stock_quantity < 10 %}low{% endif %}">
-                                {% if product.stock_quantity > 0 %}📦 {{ product.stock_quantity }} шт.{% else %}❌ Нет{% endif %}
+                                {% if product.stock_quantity > 0 %}📦 {{ product.stock_quantity }} шт.{% else %}❌ Нет в наличии{% endif %}
                             </div>
                         </div>
                         <div class="card-body text-center">

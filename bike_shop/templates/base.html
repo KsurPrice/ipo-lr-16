@@ -42,10 +42,24 @@
                             <i class="bi bi-person-circle"></i> {{ user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'products:cart_view' %}">Моя корзина</a></li>
-                            <li><a class="dropdown-item" href="{% url 'orders:checkout' %}">Оформить заказ</a></li>
+                            <li><a class="dropdown-item" href="{% url 'products:cart_view' %}">
+                                <i class="bi bi-cart"></i> Моя корзина
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:checkout' %}">
+                                <i class="bi bi-credit-card"></i> Оформить заказ
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'profile' %}">
+                                <i class="bi bi-person-circle"></i> Личный кабинет
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">Выйти</a></li>
+                            <li>
+                                <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right"></i> Выйти
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                     {% else %}

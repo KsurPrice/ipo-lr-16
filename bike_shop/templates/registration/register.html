@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white text-center">
+                    <h4><i class="bi bi-person-plus"></i> Регистрация</h4>
+                </div>
+                <div class="card-body">
+                    <form id="registerForm">
+                        <div class="mb-3"><input type="text" id="username" class="form-control" placeholder="Логин*" required></div>
+                        <div class="mb-3"><input type="email" id="email" class="form-control" placeholder="Email*" required></div>
+                        <div class="mb-3"><input type="password" id="password" class="form-control" placeholder="Пароль*" required></div>
+                        <div class="mb-3"><input type="text" id="full_name" class="form-control" placeholder="ФИО*" required></div>
+                        <div class="mb-3"><input type="text" id="phone" class="form-control" placeholder="Телефон"></div>
+                        <div class="mb-3"><input type="text" id="delivery_city" class="form-control" placeholder="Город доставки"></div>
+                        <div class="mb-3"><input type="text" id="favorite_category" class="form-control" placeholder="Любимая категория"></div>
+                        <button type="submit" class="btn btn-success w-100">Зарегистрироваться</button>
+                    </form>
+                    <div id="regError" class="alert alert-danger mt-3 d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            username: document.getElementById('username').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            full_name: document.getElementById('full_name').value,
+            phone: document.getElementById('phone').value,
+            delivery_city: document.getElementById('delivery_city').value,
+            favorite_category: document.getElementById('favorite_category').value
+        };
+        const response = await fetch('/api/auth/register/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (response.ok) {
+            const result = await response.json();
+            localStorage.setItem('access_token', result.access);
+            localStorage.setItem('refresh_token', result.refresh);
+            window.location.href = '/';
+        } else {
+            const error = await response.json();
+            document.getElementById('regError').classList.remove('d-none');
+            document.getElementById('regError').innerText = JSON.stringify(error);
+        }
+    });
+</script>
+{% endblock %}

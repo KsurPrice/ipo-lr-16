@@ -4,7 +4,6 @@
 {% block title %}BikeShop - лучшие велоаксессуары{% endblock %}
 
 {% block content %}
-<!-- Hero секция -->
 <section class="hero-section">
     <div class="container text-center">
         <h1>🚲 BikeShop</h1>
@@ -17,7 +16,6 @@
 </section>
 
 <div class="container">
-    <!-- Секция популярных товаров -->
     <section class="mb-5">
         <h2 class="text-center mb-4">🔥 Популярные товары</h2>
         <div class="row">
@@ -26,7 +24,19 @@
                 <div class="card product-card h-100">
                     <div class="position-relative">
                         <div class="card-img-top text-center pt-3">
-                            <i class="bi bi-bicycle" style="font-size: 80px; color: #e67e22;"></i>
+                            {% if 'Bicycles' in product.category.name %}
+                                <img src="{% static 'images/bike.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Велосипед">
+                            {% elif 'Lights' in product.category.name %}
+                                <img src="{% static 'images/fonarik.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Фонарь">
+                            {% elif 'Locks' in product.category.name %}
+                                <img src="{% static 'images/zamok.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Замок">
+                            {% elif 'Bags' in product.category.name %}
+                                <img src="{% static 'images/sumka.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Сумка">
+                            {% elif 'Helmets' in product.category.name %}
+                                <img src="{% static 'images/schlem.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Шлем">
+                            {% else %}
+                                <img src="{% static 'images/bike.jpg' %}" class="img-fluid" style="height: 150px; width: 100%; object-fit: cover;" alt="Аксессуар">
+                            {% endif %}
                         </div>
                         <div class="stock-badge {% if product.stock_quantity < 10 %}low{% endif %}">
                             {% if product.stock_quantity > 0 %}В наличии: {{ product.stock_quantity }}{% else %}Нет в наличии{% endif %}
@@ -51,7 +61,6 @@
         </div>
     </section>
 
-    <!-- Секция категорий -->
     <section class="mb-5">
         <h2 class="text-center mb-4">📂 Категории товаров</h2>
         <div class="row">

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">Личный кабинет</h1>
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-person-badge"></i> Мой профиль</h5>
+                </div>
+                <div class="card-body">
+                    <div id="profileLoading" class="text-center py-3">
+                        <div class="spinner-border text-primary"></div>
+                        <p>Загрузка...</p>
+                    </div>
+                    <form id="profileForm" style="display: none;">
+                        <div class="mb-2"><label>Логин</label><input id="profileUsername" class="form-control" disabled></div>
+                        <div class="mb-2"><label>Email</label><input id="profileEmail" class="form-control" disabled></div>
+                        <div class="mb-2"><label>ФИО</label><input id="profileFullName" class="form-control" required></div>
+                        <div class="mb-2"><label>Телефон</label><input id="profilePhone" class="form-control"></div>
+                        <div class="mb-2"><label>Адрес</label><textarea id="profileAddress" class="form-control" rows="2"></textarea></div>
+                        <div class="mb-2"><label>Город доставки</label><input id="profileDeliveryCity" class="form-control"></div>
+                        <div class="mb-2"><label>Любимая категория</label><input id="profileFavoriteCategory" class="form-control"></div>
+                        <div class="mb-2"><label>Роль</label><input id="profileRole" class="form-control" disabled></div>
+                        <button type="submit" class="btn btn-primary w-100">Сохранить</button>
+                    </form>
+                    <div id="profileMessage" class="alert mt-3 d-none"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-truck"></i> Мои заказы</h5>
+                </div>
+                <div class="card-body" id="ordersList">Загрузка...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Функция запроса с токеном
+    async function apiRequest(url, options = {}) {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+        let response = await fetch(url, options);
+        
+        // Если токен просрочен — пытаемся обновить
+        if (response.status === 401 && token) {
+            const refresh = localStorage.getItem('refresh_token');
+            if (refresh) {
+                const refreshResp = await fetch('/api/auth/token/refresh/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh })
+                });
+                if (refreshResp.ok) {
+                    const newTokens = await refreshResp.json();
+                    localStorage.setItem('access_token', newTokens.access);
+                    options.headers['Authorization'] = `Bearer ${newTokens.access}`;
+                    response = await fetch(url, options);
+                } else {
+                    localStorage.clear();
+                    window.location.href = '/login/';
+                }
+            }
+        }
+        return response;
+    }
+
+    // Загрузка профиля
+    async function loadProfile() {
+        const response = await apiRequest('/api/me/');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('profileUsername').value = data.username || '';
+            document.getElementById('profileEmail').value = data.email || '';
+            document.getElementById('profileFullName').value = data.full_name || '';
+            document.getElementById('profilePhone').value = data.phone || '';
+            document.getElementById('profileAddress').value = data.address || '';
+            document.getElementById('profileDeliveryCity').value = data.delivery_city || '';
+            document.getElementById('profileFavoriteCategory').value = data.favorite_category || '';
+            const roleMap = { customer: 'Покупатель', manager: 'Менеджер', admin: 'Администратор' };
+            document.getElementById('profileRole').value = roleMap[data.role] || data.role;
+            document.getElementById('profileLoading').style.display = 'none';
+            document.getElementById('profileForm').style.display = 'block';
+        } else if (response.status === 401) {
+            window.location.href = '/login/';
+        }
+    }
+
+    // Сохранение профиля
+    document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            full_name: document.getElementById('profileFullName').value,
+            phone: document.getElementById('profilePhone').value,
+            address: document.getElementById('profileAddress').value,
+            delivery_city: document.getElementById('profileDeliveryCity').value,
+            favorite_category: document.getElementById('profileFavoriteCategory').value
+        };
+        const response = await apiRequest('/api/me/', { method: 'PATCH', body: JSON.stringify(data) });
+        const msgDiv = document.getElementById('profileMessage');
+        if (response.ok) {
+            msgDiv.className = 'alert alert-success mt-3';
+            msgDiv.innerText = 'Профиль обновлён!';
+            setTimeout(() => msgDiv.classList.add('d-none'), 3000);
+        } else {
+            msgDiv.className = 'alert alert-danger mt-3';
+            msgDiv.innerText = 'Ошибка обновления';
+        }
+    });
+
+    // Загрузка заказов
+    async function loadOrders() {
+        const container = document.getElementById('ordersList');
+        const response = await apiRequest('/api/orders/');
+        if (response.ok) {
+            const orders = await response.json();
+            if (!orders.length) {
+                container.innerHTML = '<p>У вас пока нет заказов.</p>';
+                return;
+            }
+            let html = '<div class="table-responsive"><table class="table table-striped">';
+            html += '<thead class="table-dark"><tr><th>ID</th><th>Дата</th><th>Сумма</th><th>Детали</th></tr></thead><tbody>';
+            orders.forEach(o => {
+                const date = new Date(o.created_at).toLocaleDateString('ru-RU');
+                html += `<tr><td>#${o.id}</td><td>${date}</td><td>${o.total_price} руб.</td><td><button class="btn btn-sm btn-outline-info" onclick="alert('Заказ #${o.id}\\nСумма: ${o.total_price} руб.\\nАдрес: ${o.address || '-'}')">Подробнее</button></td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="alert alert-warning">Не удалось загрузить заказы</div>';
+        }
+    }
+
+    loadProfile();
+    loadOrders();
+</script>
+{% endblock %}
