@@ -1,1 +1,1 @@
-web: python manage.py migrate && python manage.py runserver 0.0.0.0:$PORT
+web: cd bike_shop && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn bike_shop.wsgi:application --bind 0.0.0.0:$PORT
